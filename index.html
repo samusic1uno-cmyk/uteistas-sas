@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taller Contable – Uteista S.A.S.</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@300;400;600&family=Fira+Code:wght@400;500&display=swap');
+  :root{--bg:#f7f4ef;--ink:#1a1810;--accent:#2d5a8e;--accent2:#7b3f9e;--muted:#6b6456;--line:#ccc5b8;--card:#ffffff;--dr:#1a4d2e;--cr:#7a1e1e;--dr-bg:#e8f5ec;--cr-bg:#fdf0f0;--hi:#fff9e6;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--ink);font-size:13.5px;line-height:1.55;}
+  .nav-tabs{position:sticky;top:0;z-index:100;background:var(--ink);display:flex;flex-wrap:wrap;gap:2px;padding:6px 8px;}
+  .nav-tabs button{background:transparent;border:1px solid #444;color:#ccc;font-family:'Source Sans 3',sans-serif;font-size:12px;font-weight:600;padding:5px 12px;border-radius:3px;cursor:pointer;transition:all .2s;letter-spacing:.5px;}
+  .nav-tabs button.active,.nav-tabs button:hover{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .section{display:none;padding:20px 16px 40px;max-width:1100px;margin:0 auto;}
+  .section.active{display:block;}
+  h1{font-family:'Playfair Display',serif;font-size:2rem;color:var(--accent);border-bottom:3px solid var(--accent);padding-bottom:8px;margin-bottom:6px;}
+  .subtitle{color:var(--muted);font-size:13px;margin-bottom:24px;}
+  h2{font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--accent2);margin:28px 0 10px;}
+  .asiento{background:var(--card);border:1px solid var(--line);border-radius:6px;margin-bottom:18px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+  .asiento-header{background:var(--ink);color:#fff;padding:8px 14px;display:flex;justify-content:space-between;align-items:center;}
+  .asiento-header .desc{font-weight:600;font-size:13px;}
+  .asiento-header .fecha{font-size:11px;color:#aaa;}
+  .asiento-body{overflow-x:auto;}
+  table.t{width:100%;border-collapse:collapse;font-size:12.5px;}
+  table.t th{background:#f0ede8;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.7px;padding:5px 10px;text-align:left;border-bottom:1px solid var(--line);}
+  table.t th.r{text-align:right;}
+  table.t td{padding:5px 10px;border-bottom:1px solid #f0ede8;vertical-align:middle;}
+  table.t td.cod{font-family:'Fira Code',monospace;font-size:11px;color:var(--muted);white-space:nowrap;}
+  table.t td.nom{padding-left:10px;}
+  table.t td.nom.ind{padding-left:26px;}
+  table.t td.m{text-align:right;font-family:'Fira Code',monospace;white-space:nowrap;}
+  table.t tr.dr td{background:var(--dr-bg);}
+  table.t tr.cr td{background:var(--cr-bg);}
+  table.t tr.tot td{background:#f0ede8;font-weight:700;border-top:2px solid var(--line);}
+  table.t tr.tot td.m{font-family:'Fira Code',monospace;}
+  table.t tr.ok td{background:#1a4d2e;color:#fff;font-weight:700;}
+  table.t tr.ok td.m{font-family:'Fira Code',monospace;}
+  .db{color:var(--dr);font-weight:700;font-size:10px;margin-right:3px;}
+  .cr{color:var(--cr);font-weight:700;font-size:10px;margin-right:3px;}
+  .nota{background:var(--hi);border-left:3px solid #e6b800;font-size:11.5px;color:#5a4800;padding:8px 12px;margin:0;}
+  .check-ok{background:#e8f5ec;color:#1a4d2e;font-weight:700;text-align:center;padding:7px;font-size:12px;border-top:1px solid #b2dfbb;}
+  /* CUENTAS T */
+  .t-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;}
+  .tc{background:var(--card);border:1px solid var(--line);border-radius:6px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+  .tc-title{background:var(--accent);color:#fff;text-align:center;font-weight:700;font-size:12px;padding:6px 8px;}
+  .tc-title span{font-size:10px;font-family:'Fira Code',monospace;opacity:.8;display:block;}
+  .tc-body{display:grid;grid-template-columns:1fr 1fr;}
+  .tc-col{padding:5px 8px;}
+  .tc-col.l{border-right:2px solid var(--ink);}
+  .tc-head{font-size:10px;text-transform:uppercase;font-weight:700;letter-spacing:.6px;margin-bottom:3px;}
+  .tc-col.l .tc-head{color:var(--dr);}
+  .tc-col.r .tc-head{color:var(--cr);text-align:right;}
+  .tc-e{font-family:'Fira Code',monospace;font-size:11px;padding:1px 0;}
+  .tc-e.r{text-align:right;}
+  .tc-saldo{display:grid;grid-template-columns:1fr 1fr;padding:4px 8px;background:#f7f4ef;border-top:1px solid var(--line);}
+  .tc-s{font-family:'Fira Code',monospace;font-size:12px;font-weight:700;}
+  .tc-s.dr{color:var(--dr);}
+  .tc-s.cr{color:#7a1e1e;text-align:right;}
+  /* ESTADOS */
+  .ef{background:var(--card);border:1px solid var(--line);border-radius:8px;margin-bottom:24px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+  .ef-hdr{background:var(--accent2);color:#fff;padding:14px 20px;text-align:center;}
+  .ef-hdr h2{color:#fff;margin:0;font-size:1.1rem;}
+  .ef-hdr p{font-size:11px;opacity:.8;margin-top:2px;}
+  table.ef{width:100%;border-collapse:collapse;font-size:13px;}
+  table.ef td{padding:5px 16px;border-bottom:1px solid #f0ede8;}
+  table.ef td:last-child{text-align:right;font-family:'Fira Code',monospace;}
+  table.ef tr.gh td{background:#f0ede8;font-weight:700;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.7px;}
+  table.ef tr.sub td{background:#eef4fb;font-weight:600;border-top:1px solid var(--line);}
+  table.ef tr.tot td{background:var(--ink);color:#fff;font-weight:700;font-size:14px;}
+  table.ef tr.ind td:first-child{padding-left:30px;}
+  table.ef tr.pos td{background:#e8f5ec;color:#1a4d2e;font-weight:700;}
+  .bal-ok{text-align:center;padding:14px;font-weight:700;font-size:13px;background:#e8f5ec;color:#1a4d2e;border-top:2px solid #1a4d2e;}
+  .acc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;}
+  .acc{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:12px 14px;text-align:center;}
+  .acc .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
+  .acc .val{font-size:18px;font-weight:700;color:var(--accent);font-family:'Fira Code',monospace;margin:4px 0;}
+  @media(max-width:600px){.acc-grid{grid-template-columns:1fr;}.t-grid{grid-template-columns:1fr;}h1{font-size:1.4rem;}}
+</style>
+</head>
+<body>
+<nav class="nav-tabs">
+  <button class="active" onclick="show('intro')">📋 Enunciado</button>
+  <button onclick="show('asientos')">① Asientos</button>
+  <button onclick="show('cuentas-t')">② Cuentas T</button>
+  <button onclick="show('balance')">③ Balance General</button>
+  <button onclick="show('pyr')">④ P&amp;G</button>
+</nav>
+
+<!-- INTRO -->
+<div id="intro" class="section active">
+  <h1>Taller Contable</h1>
+  <p class="subtitle">Compañía Uteista S.A.S. · 12/05/2026 · PUC Colombia</p>
+  <div class="acc-grid">
+    <div class="acc"><div class="lbl">Número de Acciones</div><div class="val">1.000</div></div>
+    <div class="acc"><div class="lbl">Valor Nominal / Acción</div><div class="val">$2.000.000</div></div>
+    <div class="acc"><div class="lbl">Capital Autorizado</div><div class="val">$2.000.000.000</div></div>
+  </div>
+  <div class="asiento">
+    <div class="asiento-header"><span class="desc">12 Operaciones del Taller</span></div>
+    <div class="asiento-body">
+      <table class="t"><thead><tr><th>#</th><th>Descripción</th></tr></thead><tbody>
+        <tr><td>①</td><td>Constitución. Cap. autorizado $2.000M, suscrito $1.200M, pagado 80% = $960M.</td></tr>
+        <tr><td>②</td><td>Registro Cámara de Comercio $3.800.000.</td></tr>
+        <tr><td>③</td><td>Apertura cuentas bancarias (4 cuentas) y CDT 180 días al 1% mensual.</td></tr>
+        <tr><td>④</td><td>Compra local comercial $150.000.000 – Banco Occidente.</td></tr>
+        <tr><td>⑤</td><td>5 computadores $2.500.000 c/u + 2 impresoras $1.800.000 c/u + IVA 19%, ret. renta 2.5%, reteica 8×mil – Banco Bogotá.</td></tr>
+        <tr><td>⑥</td><td>Muebles de oficina $25.000.000 + IVA 19%, ret. renta 2.5%, reteica 8×mil – Bancolombia.</td></tr>
+        <tr><td>⑦</td><td>Compra 200 Prod①×$500k + 120 Prod②×$800k + 500 Prod③×$1.100k. 50.7% transferencia. Vendedor = autorretenedor (no ret. renta ni ICA).</td></tr>
+        <tr><td>⑧</td><td>Honorarios L. Díaz $10.000.000 + IVA 14%, ret. 11% renta, reteica 8×mil – Bancolombia.</td></tr>
+        <tr><td>⑨</td><td>Adecuación local Integral Services DR2 $50.000.000 + IVA $300.000, ret. 2% obra civil, reteica 8×mil – Banco Bogotá.</td></tr>
+        <tr><td>⑩</td><td>Transporte de carga (computadores+muebles) $800.000, ret. 1% renta, reteica 8×mil – Banco Occidente.</td></tr>
+        <tr><td>⑪</td><td>Instalación redes eléctricas $2.000.000 + IVA 19%, ret. 4% renta, reteica 8×mil.</td></tr>
+        <tr><td>⑫</td><td>Venta 80% inventario a Ecopetrol. Prod① y ③ IVA 19%, Prod② IVA 6%. Ecopetrol retiene 2.5% renta, 8×mil ICA, 15% del IVA.</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ASIENTOS -->
+<div id="asientos" class="section">
+  <h1>Asientos Contables</h1>
+  <p class="subtitle">Débito = Crédito en cada asiento · PUC Colombia</p>
+
+  <!-- A1 -->
+  <h2>Asiento 1 – Constitución de la Sociedad</h2>
+  <div class="asiento">
+    <div class="asiento-header"><span class="desc">Constitución Uteista S.A.S. – Capital Autorizado, Suscrito y Pagado</span><span class="fecha">12/05/2026</span></div>
+    <div class="asiento-body">
+      <table class="t">
+        <thead><tr><th>Cód.</th><th>Cuenta</th><th class="r">Débito</th><th class="r">Crédito</th></tr></thead>
+        <tbody>
+          <tr class="dr"><td class="cod">1005</td><td class="nom"><span class="db">DB</span>Caja General (80% suscrito pagado)</td><td class="m">$960.000.000</td><td class="m"></td></tr>
+          <tr class="dr"><td class="cod">0516</td><td class="nom"><span class="db">DB</span>Capital por Suscribir (400 acc × $2M)</td><td class="m">$800.000.000</td><td class="m"></td></tr>
+          <tr class="dr"><td class="cod">0515</td><td class="nom"><span class="db">DB</span>Capital Suscrito × Cobrar (20% de $1.200M)</td><td class="m">$240.000.000</td><td class="m"></td></tr>
+          <tr class="cr"><td class="cod">3105</td><td class="nom ind"><span class="cr">CR</span>Capital Autorizado (1.000 acc × $2.000.000)</td><td class="m"></td><td class="m">$2.000.000.000</td></tr>
+          <tr class="ok"><td></td><td>TOTAL</td><td class="m">$2.000.000.000</td><td class="m">$2.000.000.000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="check-ok">✅ DB $2.000.000.000 = CR $2.000.000.000</div>
+    <div class="nota">Capital autorizado = 1.000 acc × $2.000.000 = $2.000M | Suscrito = 600 acc × $2M = $1.200M | Pagado = 80% = $960M → entra Caja | x cobrar = 20% = $240M | x suscribir = 400 acc = $800M</div>
+  </div>
+
+  <!-- A2 -->
+  <h2>Asiento 2 – Registro Cámara de Comercio</h2>
+  <div class="asiento">
+    <div class="asiento-header"><span class="desc">Gasto registro mercantil – pago en efectivo</span><span class="fecha">12/05/2026</span></div>
+    <div class="asiento-body">
+      <table class="t">
+        <thead><tr><th>Cód.</th><th>Cuenta</th><th class="r">Débito</th><th class="r">Crédito</th></tr></thead>
+        <tbody>
+          <tr class="dr"><td class="cod">5290</td><td class="nom"><span class="db">DB</span>Otros Gastos – Registro Mercantil</td><td class="m">$3.800.000</td><td class="m"></td></tr>
+          <tr class="cr"><td class="cod">1005</td><td class="nom ind"><span class="cr">CR</span>Caja General</td><td class="m"></td><td class="m">$3.800.000</td></tr>
+          <tr class="ok"><td></td><td>TOTAL</td><td class="m">$3.800.000</td><td class="m">$3.800.000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="check-ok">✅ DB $3.800.000 = CR $3.800.000</div>
+  </div>
+
+  <!-- A3 -->
+  <h2>Asiento 3 – Apertura de Cuentas Bancarias y CDT</h2>
+  <div class="asiento">
+    <div class="asiento-header"><span class="desc">Distribución de caja en 4 cuentas + CDT 180 días al 1% mensual</span><span class="fecha">12/05/2026</span></div>
+    <div class="asiento-body">
+      <table class="t">
+        <thead><tr><th>Cód.</th><th>Cuenta</th><th class="r">Débito</th><th class="r">Crédito</th></tr></thead>
+        <tbody>
+          <tr class="dr"><td class="cod">1110-01</td><td class="nom"><span class="db">DB</span>Banco Occidente – Cta Corriente</td><td class="m">$250.000.000</td><td class="m"></td></tr>
+          <tr class="dr"><td class="cod">1116-01</td><td class="nom"><span class="db">DB</span>Bancolombia – Cta Ahorros</td><td class="m">$200.000.000</td><td class="m"></td></tr>
+          <tr class="dr"><td class="cod">1110-02</td><td class="nom"><span class="db">DB</span>Banco Bogotá – Cta Corriente</td><td class="m">$250.000.000</td><td class="m"></td></tr>
+          <tr class="dr"><td class="cod">1116-02</td><td class="nom"><span class="db">DB</span>Banco Bogotá – Cta Ahorros</td><td class="m">$200.000.000</td><td class="m"></td></tr>
+          <tr class="dr"><td class="cod">1120</td><td class="nom"><span class="db">DB</span>CDT – Inversión Temporal</td><td class="m">$56.200.000</td><td class="m"></td></tr>
+          <tr class="cr"><td class="cod">1005</td><td class="nom ind"><span class="cr">CR</span>Caja General ($960M − $3.8M)</td><td class="m"></td><td class="m">$956.200.000</td></tr>
+          <tr class="ok"><td></td><td>TOTAL</td><td class="m">$956.200.000</td><td class="m">$956.200.000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="check-ok">✅ DB $956.200.000 = CR $956.200.000</div>
+    <div class="nota">CDT: $56.200.000 × 1% mensual × 6 meses = $3.372.000 de rendimiento futuro. El interés se reconoce al vencimiento o por causación mensual.</div>
+  </div>
+
+  <!-- A4 -->
+  <h2>Asiento 4 – Compra Local Comercial</h2>
+  <div class="asiento">
+    <div class="asiento-header"><span class="desc">Local comercial $150.000.000 – pago desde Banco Occidente</span><span class="fecha">12/05/2026</span></div>
+    <div class="asiento-body">
+      <table class="t">
+        <thead><tr><th>Cód.</th><th>Cuenta</th><th class="r">Débito</th><th class="r">Crédito</th></tr></thead>
+        <tbody>
+          <tr class="dr"><td class="cod">1516</td><td class="nom"><span class="db">DB</span>Construcciones y Edificaciones</td><td class="m">$150.000.000</td><td class="m"></td></tr>
+          <tr class="cr"><td class="cod">1110-01</td><td class="nom ind"><span class="cr">CR</span>Banco Occidente – Cta Corriente</td><td class="m"></td><td class="m">$150.000.000</td></tr>
+          <tr class="ok"><td></td><td>TOTAL</td><td class="m">$150.000.000</td><td class="m">$150.000.000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="check-ok">✅ DB $150.000.000 = CR $150.000.000</div>
+  </div>
+
+  <!-- A5 -->
+  <h2>Asiento 5 – Compra Equipos de Cómputo e Impresoras</h2>
+  <div class="asiento">
+    <div class="asiento-header"><span class="desc">5 computadores × $2.500.000 + 2 impresoras × $1.800.000 | IVA 19% | Ret 2.5% | Reteica 8×mil | Banco Bogotá</span></div>
+    <div class="asiento-body">
+      <table class="t">
+        <thead><tr><th>Cód.</th><th>Cuenta</th><th class="r">Débito</th><th class="r">Crédito</th></tr></thead>
+        <tbody>
+          <tr class="dr"><td class="cod">1524</td><td class="nom"><span class="db">DB</span>Equipo de Cómputo – Computadores (5 × $2.500.000)</td><td class="m">$12.500.000</td><td class="m"></td></tr>
+          <tr class="dr"><td class="cod">1524</td><td class="nom"><span class="db">DB</span>Equipo de Oficina – Impresoras (2 × $1.800.000)</td><td class="m">$3.600.000</td><td class="m"></td></tr>
+          <tr class="dr"><td class="cod">2408</td><td class="nom"><span class="db">DB</span>IVA Descontable 19% sobre $16.100.000</td><td class="m">$3.059.000</td><td class="m"></td></tr>
+          <tr class="cr"><td class="cod">2365</td><td class="nom ind"><span class="cr">CR</span>Retención en la Fuente Practicada 2.5%</td><td class="m"></td><td class="m">$402.500</td></tr>
+          <tr class="cr"><td class="cod">2368</td><td class="nom ind"><span class="cr">CR</span>Reteica Practicada 8×mil</td><td class="m"></td><td class="m">$128.800</td></tr>
+          <tr class="cr"><td class="cod">1110-02</td><td class="nom ind"><span class="cr">CR</span>Banco Bogotá – Cta Corriente (pago neto)</td><td class="m"></td><td class="m">$18.627.700</td></tr>
+          <tr class="ok"><td></td><td>TOTAL</td><td class="m">$19.159.000</td><td class="m">$19.159.000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="check-ok">✅ DB $19.159.000 = CR $19.159.000</div>
+    <div class="nota">Base: $16.100.000 | IVA 19% = $3.059.000 | Total bruto = $19.159.000 | Ret renta 2.5% = $402.500 | Reteica = $128.800 | Pago neto = $18.627.700</div>
+  </div>
+
+  <!-- A6 -->
+  <h2>Asiento 6 – Compra Muebles y Enseres de Oficina</h2>
+  <div class="asiento">
+    <div class="asiento-header"><span class="desc">Escritorios, sillas, vitrinas $25.000.000 | IVA 19% | Ret 2.5% | Reteica 8×mil | Bancolombia</span></div>
+    <div class="asiento-body">
+      <table class="t">
+        <thead><tr><th>Cód.</th><th>Cuenta</th><th class="r">Débito</th><th class="r">Crédito</th></tr></thead>
+        <tbody>
+          <tr class="dr"><td class="cod">1504</td><td class="nom"><span class="db">DB</span>Muebles y Enseres</td><td class="m">$25.000.000</td><td class="m"></td></tr>
+          <tr class="dr"><td class="cod">2408</td><td class="nom"><span class="db">DB</span>IVA Descontable 19%</td><td class="m">$4.750.000</td><td class="m"></td></tr>
+          <tr class="cr"><td class="cod">2365</td><td class="nom ind"><span class="cr">CR</span>Retención en la Fuente Practicada 2.5%</td><td class="m"></td><td class="m">$625.000</td></tr>
+          <tr class="cr"><td class="cod">2368</td><td class="nom ind"><span class="cr">CR</span>Reteica Practicada 8×mil</td><td class="m"></td><td class="m">$200.000</td></tr>
+          <tr class="cr"><td class="cod">1116-01</td><td class="nom ind"><span class="cr">CR</span>Bancolombia – Cta Ahorros (pago neto)</td><td class="m"></td><td class="m">$28.925.000</td></tr>
+          <tr class="ok"><td></td><td>TOTAL</td><td class="m">$29.750.000</td><td class="m">$29.750.000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="check-ok">✅ DB $29.750.000 = CR $29.750.000</div>
+    <div class="nota">Base $25M | IVA 19% = $4.750.000 | Total bruto = $29.750.000 | Ret 2.5% = $625.000 | Reteica = $200.000 | Pago = $28.925.000</div>
+  </div>
+
+  <!-- A7 -->
+  <h2>Asiento 7 – Compra de Inventarios (Mercancías)</h2>
+  <div class="asiento">
+    <div class="asiento-header"><span class="desc">Prod① 200×$500k (IVA 19%) | Prod② 120×$800k (IVA 6%) | Prod③ 500×$1.100k (IVA 19%) | Vendedor = autorretenedor</span></div>
+    <div class="asiento-body">
+      <table class="t">
+        <thead><tr><th>Cód.</th><th>Cuenta</th><th class="r">Débito</th><th class="r">Crédito</th></tr></thead>
+        <tbody>
+          <tr class="dr"><td class="cod">1430-01</td><td class="nom"><span class="db">DB</span>Inventario – Producto 1 (200 uds × $500.000)</td><td class="m">$100.000.000</td><td class="m"></td></tr>
+          <tr class="dr"><td class="cod">1430-02</td><td class="nom"><span class="db">DB</span>Inventario – Producto 2 (120 uds × $800.000)</td><td class="m">$96.000.000</td><td class="m"></td></tr>
+          <tr class="dr"><td class="cod">1430-03</td><td class="nom"><span class="db">DB</span>Inventario – Producto 3 (500 uds × $1.100.000)</td><td class="m">$550.000.000</td><td class="m"></td></tr>
+          <tr class="dr"><td class="cod">2408</td><td class="nom"><span class="db">DB</span>IVA Descontable (Prod① $19M + Prod② $5.76M + Prod③ $104.5M)</td><td class="m">$129.260.000</td><td class="m"></td></tr>
+          <tr class="cr"><td class="cod">1110-02</td><td class="nom ind"><span class="cr">CR</span>Banco Bogotá – Cta Corriente (50.7% del total)</td><td class="m"></td><td class="m">$443.756.820</td></tr>
+          <tr class="cr"><td class="cod">2205</td><td class="nom ind"><span class="cr">CR</span>Proveedores (49.3% restante)</td><td class="m"></td><td class="m">$431.503.180</td></tr>
+          <tr class="ok"><td></td><td>TOTAL</td><td class="m">$875.260.000</td><td class="m">$875.260.000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="check-ok">✅ DB $875.260.000 = CR $875.260.000</div>
+    <div class="nota">Total mercancía = $746.000.000 | IVA total = $129.260.000 | Total factura = $875.260.000 | 50.7% banco = $443.756.820 | 49.3% proveedor = $431.503.180 | Vendedor es autorretenedor → NO se practica retención en la fuente ni reteica.</div>
+  </div>
+
+  <!-- A8 -->
+  <h2>Asiento 8 – Honorarios L. Díaz Contadores S.A.S</h2>
+  <div class="asiento">
+    <div class="asiento-header"><span class="desc">Honorarios $10.000.000 | IVA 14% | Ret 11% renta | Reteica 8×mil | Bancolombia</span></div>
+    <div class="asiento-body">
+      <table class="t">
+        <thead><tr><th>Cód.</th><th>Cuenta</th><th class="r">Débito</th><th class="r">Crédito</th></tr></thead>
+        <tbody>
+          <tr class="dr"><td class="cod">5105</td><td class="nom"><span class="db">DB</span>Honorarios (Gasto)</td><td class="m">$10.000.000</td><td class="m"></td></tr>
+          <tr class="dr"><td class="cod">2408</td><td class="nom"><span class="db">DB</span>IVA Descontable 14%</td><td class="m">$1.400.000</td><td class="m"></td></tr>
+          <tr class="cr"><td class="cod">2365</td><td class="nom ind"><span class="cr">CR</span>Retención en la Fuente Practicada 11%</td><td class="m"></td><td class="m">$1.100.000</td></tr>
+          <tr class="cr"><td class="cod">2368</td><td class="nom ind"><span class="cr">CR</span>Reteica Practicada 8×mil</td><td class="m"></td><td class="m">$80.000</td></tr>
+          <tr class="cr"><td class="cod">1116-01</td><td class="nom ind"><span class="cr">CR</span>Bancolombia – Cta Ahorros (pago neto)</td><td class="m"></td><td class="m">$10.220.000</td></tr>
+          <tr class="ok"><td></td><td>TOTAL</td><td class="m">$11.400.000</td><td class="m">$11.400.000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="check-ok">✅ DB $11.400.000 = CR $11.400.000</div>
+    <div class="nota">Base $10M | IVA 14% = $1.4M | Total bruto = $11.4M | Ret 11% = $1.1M | Reteica = $80.000 | Pago neto = $10.220.000</div>
+  </div>
+
+  <!-- A9 -->
+  <h2>Asiento 9 – Adecuación del Local (Obra Civil)</h2>
+  <div class="asiento">
+    <div class="asiento-header"><span class="desc">Integral Services DR2 $50.000.000 | IVA $300.000 | Ret 2% obra civil | Reteica 8×mil | Banco Bogotá</span></div>
+    <div class="asiento-body">
+      <table class="t">
+        <thead><tr><th>Cód.</th><th>Cuenta</th><th class="r">Débito</th><th class="r">Crédito</th></tr></thead>
+        <tbody>
+          <tr class="dr"><td class="cod">1516</td><td class="nom"><span class="db">DB</span>Adecuaciones e Instalaciones (Mayor valor activo)</td><td class="m">$50.000.000</td><td class="m"></td></tr>
+          <tr class="dr"><td class="cod">2408</td><td class="nom"><span class="db">DB</span>IVA Descontable</td><td class="m">$300.000</td><td class="m"></td></tr>
+          <tr class="cr"><td class="cod">2365</td><td class="nom ind"><span class="cr">CR</span>Retención en la Fuente 2% (Obra Civil)</td><td class="m"></td><td class="m">$1.000.000</td></tr>
+          <tr class="cr"><td class="cod">2368</td><td class="nom ind"><span class="cr">CR</span>Reteica Practicada 8×mil</td><td class="m"></td><td class="m">$400.000</td></tr>
+          <tr class="cr"><td class="cod">1110-02</td><td class="nom ind"><span class="cr">CR</span>Banco Bogotá – Cta Corriente (pago neto)</td><td class="m"></td><td class="m">$48.900.000</td></tr>
+          <tr class="ok"><td></td><td>TOTAL</td><td class="m">$50.300.000</td><td class="m">$50.300.000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="check-ok">✅ DB $50.300.000 = CR $50.300.000</div>
+    <div class="nota">Base $50M | IVA $300.000 | Total = $50.300.000 | Ret obra civil 2% = $1.000.000 | Reteica 8×mil = $400.000 | Pago = $48.900.000</div>
+  </div>
+
+  <!-- A10 -->
+  <h2>Asiento 10 – Servicio de Transporte de Carga</h2>
+  <div class="asiento">
+    <div class="asiento-header"><span class="desc">Transporte computadores y muebles $800.000 | Ret 1% renta | Reteica 8×mil | Banco Occidente</span></div>
+    <div class="asiento-body">
+      <table class="t">
+        <thead><tr><th>Cód.</th><th>Cuenta</th><th class="r">Débito</th><th class="r">Crédito</th></tr></thead>
+        <tbody>
+          <tr class="dr"><td class="cod">1524</td><td class="nom"><span class="db">DB</span>Mayor Valor Equipo (Transporte capitalizado)</td><td class="m">$800.000</td><td class="m"></td></tr>
+          <tr class="cr"><td class="cod">2365</td><td class="nom ind"><span class="cr">CR</span>Retención en la Fuente 1%</td><td class="m"></td><td class="m">$8.000</td></tr>
+          <tr class="cr"><td class="cod">2368</td><td class="nom ind"><span class="cr">CR</span>Reteica Practicada 8×mil</td><td class="m"></td><td class="m">$6.400</td></tr>
+          <tr class="cr"><td class="cod">1110-01</td><td class="nom ind"><span class="cr">CR</span>Banco Occidente – Cta Corriente (pago neto)</td><td class="m"></td><td class="m">$785.600</td></tr>
+          <tr class="ok"><td></td><td>TOTAL</td><td class="m">$800.000</td><td class="m">$800.000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="check-ok">✅ DB $800.000 = CR $800.000</div>
+    <div class="nota">El transporte hace parte del costo de los activos adquiridos → se capitaliza. Ret 1% = $8.000 | Reteica = $6.400 | Pago = $785.600</div>
+  </div>
+
+  <!-- A11 -->
+  <h2>Asiento 11 – Instalación Redes Eléctricas</h2>
+  <div class="asiento">
+    <div class="asiento-header"><span class="desc">Redes eléctricas $2.000.000 | IVA 19% | Ret 4% renta | Reteica 8×mil</span></div>
+    <div class="asiento-body">
+      <table class="t">
+        <thead><tr><th>Cód.</th><th>Cuenta</th><th class="r">Débito</th><th class="r">Crédito</th></tr></thead>
+        <tbody>
+          <tr class="dr"><td class="cod">1516</td><td class="nom"><span class="db">DB</span>Adecuaciones – Redes Eléctricas</td><td class="m">$2.000.000</td><td class="m"></td></tr>
+          <tr class="dr"><td class="cod">2408</td><td class="nom"><span class="db">DB</span>IVA Descontable 19%</td><td class="m">$380.000</td><td class="m"></td></tr>
+          <tr class="cr"><td class="cod">2365</td><td class="nom ind"><span class="cr">CR</span>Retención en la Fuente 4%</td><td class="m"></td><td class="m">$80.000</td></tr>
+          <tr class="cr"><td class="cod">2368</td><td class="nom ind"><span class="cr">CR</span>Reteica Practicada 8×mil</td><td class="m"></td><td class="m">$16.000</td></tr>
+          <tr class="cr"><td class="cod">1116-02</td><td class="nom ind"><span class="cr">CR</span>Banco Bogotá – Cta Ahorros (pago neto)</td><td class="m"></td><td class="m">$2.284.000</td></tr>
+          <tr class="ok"><td></td><td>TOTAL</td><td class="m">$2.380.000</td><td class="m">$2.380.000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="check-ok">✅ DB $2.380.000 = CR $2.380.000</div>
+  </div>
+
+  <!-- A12 VENTA -->
+  <h2>Asiento 12a – Venta a Ecopetrol (80% del Inventario)</h2>
+  <div class="asiento">
+    <div class="asiento-header"><span class="desc">Prod① 160 uds × $1.250.000 | Prod② 96 uds × $1.600.000 | Prod③ 400 uds × $1.571.429 | Ecopetrol retiene renta 2.5%, ICA 8×mil, IVA 15%</span></div>
+    <div class="asiento-body">
+      <table class="t">
+        <thead><tr><th>Cód.</th><th>Cuenta</th><th class="r">Débito</th><th class="r">Crédito</th></tr></thead>
+        <tbody>
+          <tr><td colspan="4" style="background:#f0ede8;font-size:11px;padding:5px 10px;font-weight:600">
+            Prod① margen 60% → precio = $500k ÷ 0.40 = $1.250.000 &nbsp;|&nbsp; Prod② margen 50% → $800k ÷ 0.50 = $1.600.000 &nbsp;|&nbsp; Prod③ margen 30% → $1.100k ÷ 0.70 = $1.571.429
+          </td></tr>
+          <tr class="dr"><td class="cod">1305</td><td class="nom"><span class="db">DB</span>Clientes – Ecopetrol (neto a cobrar)</td><td class="m">$1.091.407.658</td><td class="m"></td></tr>
+          <tr class="dr"><td class="cod">1355</td><td class="nom"><span class="db">DB</span>Anticipo Ret. Renta Ecopetrol 2.5%</td><td class="m">$24.554.285</td><td class="m"></td></tr>
+          <tr class="dr"><td class="cod">1356</td><td class="nom"><span class="db">DB</span>Anticipo Reteica Ecopetrol 8×mil</td><td class="m">$7.857.371</td><td class="m"></td></tr>
+          <tr class="dr"><td class="cod">1357</td><td class="nom"><span class="db">DB</span>Anticipo Ret. IVA Ecopetrol 15%</td><td class="m">$24.996.685</td><td class="m"></td></tr>
+          <tr class="cr"><td class="cod">4135-01</td><td class="nom ind"><span class="cr">CR</span>Ventas Producto 1 (160 × $1.250.000)</td><td class="m"></td><td class="m">$200.000.000</td></tr>
+          <tr class="cr"><td class="cod">4135-02</td><td class="nom ind"><span class="cr">CR</span>Ventas Producto 2 (96 × $1.600.000)</td><td class="m"></td><td class="m">$153.600.000</td></tr>
+          <tr class="cr"><td class="cod">4135-03</td><td class="nom ind"><span class="cr">CR</span>Ventas Producto 3 (400 × $1.571.428)</td><td class="m"></td><td class="m">$628.571.428</td></tr>
+          <tr class="cr"><td class="cod">2408-G</td><td class="nom ind"><span class="cr">CR</span>IVA Generado (Prod① 19%=$38M + Prod② 6%=$9.2M + Prod③ 19%=$119.4M)</td><td class="m"></td><td class="m">$166.644.571</td></tr>
+          <tr class="ok"><td></td><td>TOTAL</td><td class="m">$1.148.815.999</td><td class="m">$1.148.815.999</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="check-ok">✅ DB $1.148.815.999 = CR $1.148.815.999</div>
+    <div class="nota">Total ventas sin IVA = $982.171.428 | IVA generado = $166.644.571 | Total factura = $1.148.815.999 | Ret renta 2.5% = $24.554.285 | Reteica 8×mil = $7.857.371 | Ret IVA 15% = $24.996.685 | CxC neto = $1.091.407.658</div>
+  </div>
+
+  <!-- A12b CMV -->
+  <h2>Asiento 12b – Costo de la Mercancía Vendida (CMV)</h2>
+  <div class="asiento">
+    <div class="asiento-header"><span class="desc">Salida de inventario al costo – simultáneo con la venta</span></div>
+    <div class="asiento-body">
+      <table class="t">
+        <thead><tr><th>Cód.</th><th>Cuenta</th><th class="r">Débito</th><th class="r">Crédito</th></tr></thead>
+        <tbody>
+          <tr class="dr"><td class="cod">6135</td><td class="nom"><span class="db">DB</span>Costo de Ventas</td><td class="m">$596.800.000</td><td class="m"></td></tr>
+          <tr class="cr"><td class="cod">1430-01</td><td class="nom ind"><span class="cr">CR</span>Inventario Producto 1 (160 × $500.000)</td><td class="m"></td><td class="m">$80.000.000</td></tr>
+          <tr class="cr"><td class="cod">1430-02</td><td class="nom ind"><span class="cr">CR</span>Inventario Producto 2 (96 × $800.000)</td><td class="m"></td><td class="m">$76.800.000</td></tr>
+          <tr class="cr"><td class="cod">1430-03</td><td class="nom ind"><span class="cr">CR</span>Inventario Producto 3 (400 × $1.100.000)</td><td class="m"></td><td class="m">$440.000.000</td></tr>
+          <tr class="ok"><td></td><td>TOTAL</td><td class="m">$596.800.000</td><td class="m">$596.800.000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="check-ok">✅ DB $596.800.000 = CR $596.800.000</div>
+  </div>
+</div>
+
+<!-- CUENTAS T -->
+<div id="cuentas-t" class="section">
+  <h1>Cuentas T</h1>
+  <p class="subtitle">Movimientos y saldos acumulados de todos los asientos</p>
+
+  <h2>Activo Corriente</h2>
+  <div class="t-grid">
+    <div class="tc">
+      <div class="tc-title">Caja General<span>1005</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">① $960.000.000</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">② $3.800.000</div><div class="tc-e r">③ $956.200.000</div></div>
+      </div>
+      <div class="tc-saldo"><div class="tc-s dr">Saldo DB = $0</div><div></div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">Banco Occidente – Cte<span>1110-01</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">③ $250.000.000</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">④ $150.000.000</div><div class="tc-e r">⑩ $785.600</div></div>
+      </div>
+      <div class="tc-saldo"><div class="tc-s dr">Saldo DB = $99.214.400</div><div></div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">Bancolombia – Ahorros<span>1116-01</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">③ $200.000.000</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">⑥ $28.925.000</div><div class="tc-e r">⑧ $10.220.000</div></div>
+      </div>
+      <div class="tc-saldo"><div class="tc-s dr">Saldo DB = $160.855.000</div><div></div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">Banco Bogotá – Cte<span>1110-02</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">③ $250.000.000</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">⑤ $18.627.700</div><div class="tc-e r">⑦ $443.756.820</div><div class="tc-e r">⑨ $48.900.000</div></div>
+      </div>
+      <div class="tc-saldo"><div></div><div class="tc-s cr">Saldo CR = $261.284.520</div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">Banco Bogotá – Ahorros<span>1116-02</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">③ $200.000.000</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">⑪ $2.284.000</div></div>
+      </div>
+      <div class="tc-saldo"><div class="tc-s dr">Saldo DB = $197.716.000</div><div></div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">CDT – Inversión Temporal<span>1120</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">③ $56.200.000</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">—</div></div>
+      </div>
+      <div class="tc-saldo"><div class="tc-s dr">Saldo DB = $56.200.000</div><div></div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">Clientes – Ecopetrol<span>1305</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">⑫ $1.091.407.658</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">—</div></div>
+      </div>
+      <div class="tc-saldo"><div class="tc-s dr">Saldo DB = $1.091.407.658</div><div></div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">Anticipo Ret. Renta (Ecopetrol)<span>1355</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">⑫ $24.554.285</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">—</div></div>
+      </div>
+      <div class="tc-saldo"><div class="tc-s dr">Saldo DB = $24.554.285</div><div></div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">Anticipo Reteica (Ecopetrol)<span>1356</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">⑫ $7.857.371</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">—</div></div>
+      </div>
+      <div class="tc-saldo"><div class="tc-s dr">Saldo DB = $7.857.371</div><div></div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">Anticipo Ret. IVA (Ecopetrol)<span>1357</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">⑫ $24.996.685</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">—</div></div>
+      </div>
+      <div class="tc-saldo"><div class="tc-s dr">Saldo DB = $24.996.685</div><div></div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">Inventario – Producto 1<span>1430-01</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">⑦ $100.000.000</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">⑫b $80.000.000</div></div>
+      </div>
+      <div class="tc-saldo"><div class="tc-s dr">Saldo DB = $20.000.000</div><div></div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">Inventario – Producto 2<span>1430-02</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">⑦ $96.000.000</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">⑫b $76.800.000</div></div>
+      </div>
+      <div class="tc-saldo"><div class="tc-s dr">Saldo DB = $19.200.000</div><div></div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">Inventario – Producto 3<span>1430-03</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">⑦ $550.000.000</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">⑫b $440.000.000</div></div>
+      </div>
+      <div class="tc-saldo"><div class="tc-s dr">Saldo DB = $110.000.000</div><div></div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">IVA Descontable<span>2408-D</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div>
+          <div class="tc-e">⑤ $3.059.000</div>
+          <div class="tc-e">⑥ $4.750.000</div>
+          <div class="tc-e">⑦ $129.260.000</div>
+          <div class="tc-e">⑧ $1.400.000</div>
+          <div class="tc-e">⑨ $300.000</div>
+          <div class="tc-e">⑪ $380.000</div>
+        </div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">—</div></div>
+      </div>
+      <div class="tc-saldo"><div class="tc-s dr">Saldo DB = $139.149.000</div><div></div></div>
+    </div>
+  </div>
+
+  <h2>Activo No Corriente – Propiedad, Planta y Equipo</h2>
+  <div class="t-grid">
+    <div class="tc">
+      <div class="tc-title">Construcciones y Edificaciones<span>1516</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">④ $150.000.000</div><div class="tc-e">⑨ $50.000.000</div><div class="tc-e">⑪ $2.000.000</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">—</div></div>
+      </div>
+      <div class="tc-saldo"><div class="tc-s dr">Saldo DB = $202.000.000</div><div></div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">Muebles y Enseres<span>1504</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">⑥ $25.000.000</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">—</div></div>
+      </div>
+      <div class="tc-saldo"><div class="tc-s dr">Saldo DB = $25.000.000</div><div></div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">Equipo de Cómputo y Oficina<span>1524</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">⑤ $16.100.000</div><div class="tc-e">⑩ $800.000</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">—</div></div>
+      </div>
+      <div class="tc-saldo"><div class="tc-s dr">Saldo DB = $16.900.000</div><div></div></div>
+    </div>
+  </div>
+
+  <h2>Pasivos y Patrimonio</h2>
+  <div class="t-grid">
+    <div class="tc">
+      <div class="tc-title">Capital Autorizado<span>3105</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">—</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">① $2.000.000.000</div></div>
+      </div>
+      <div class="tc-saldo"><div></div><div class="tc-s cr">Saldo CR = $2.000.000.000</div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">Capital por Suscribir<span>0516</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">① $800.000.000</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">—</div></div>
+      </div>
+      <div class="tc-saldo"><div class="tc-s dr">Saldo DB = $800.000.000</div><div></div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">Capital Suscrito × Cobrar<span>0515</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">① $240.000.000</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">—</div></div>
+      </div>
+      <div class="tc-saldo"><div class="tc-s dr">Saldo DB = $240.000.000</div><div></div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">Proveedores<span>2205</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">—</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">⑦ $431.503.180</div></div>
+      </div>
+      <div class="tc-saldo"><div></div><div class="tc-s cr">Saldo CR = $431.503.180</div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">Retención en la Fuente Practicada<span>2365</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">—</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div>
+          <div class="tc-e r">⑤ $402.500</div>
+          <div class="tc-e r">⑥ $625.000</div>
+          <div class="tc-e r">⑧ $1.100.000</div>
+          <div class="tc-e r">⑨ $1.000.000</div>
+          <div class="tc-e r">⑩ $8.000</div>
+          <div class="tc-e r">⑪ $80.000</div>
+        </div>
+      </div>
+      <div class="tc-saldo"><div></div><div class="tc-s cr">Saldo CR = $3.215.500</div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">Reteica Practicada<span>2368</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">—</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div>
+          <div class="tc-e r">⑤ $128.800</div>
+          <div class="tc-e r">⑥ $200.000</div>
+          <div class="tc-e r">⑧ $80.000</div>
+          <div class="tc-e r">⑨ $400.000</div>
+          <div class="tc-e r">⑩ $6.400</div>
+          <div class="tc-e r">⑪ $16.000</div>
+        </div>
+      </div>
+      <div class="tc-saldo"><div></div><div class="tc-s cr">Saldo CR = $831.200</div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">IVA Generado<span>2408-G</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">—</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">⑫ $166.644.571</div></div>
+      </div>
+      <div class="tc-saldo"><div></div><div class="tc-s cr">Saldo CR = $166.644.571</div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">Ventas<span>4135</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">—</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">⑫ $982.171.428</div></div>
+      </div>
+      <div class="tc-saldo"><div></div><div class="tc-s cr">Saldo CR = $982.171.428</div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">Costo de Ventas<span>6135</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">⑫b $596.800.000</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">—</div></div>
+      </div>
+      <div class="tc-saldo"><div class="tc-s dr">Saldo DB = $596.800.000</div><div></div></div>
+    </div>
+    <div class="tc">
+      <div class="tc-title">Gastos Operacionales<span>5105 / 5290</span></div>
+      <div class="tc-body">
+        <div class="tc-col l"><div class="tc-head">DÉBITO</div><div class="tc-e">② $3.800.000</div><div class="tc-e">⑧ $10.000.000</div></div>
+        <div class="tc-col r"><div class="tc-head">CRÉDITO</div><div class="tc-e r">—</div></div>
+      </div>
+      <div class="tc-saldo"><div class="tc-s dr">Saldo DB = $13.800.000</div><div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- BALANCE -->
+<div id="balance" class="section">
+  <h1>Balance General</h1>
+  <p class="subtitle">Compañía Uteista S.A.S. · Al 12 de mayo de 2026</p>
+  <div class="ef">
+    <div class="ef-hdr"><h2>BALANCE GENERAL</h2><p>Uteista S.A.S. · Cifras en pesos colombianos · 12/05/2026</p></div>
+    <table class="ef">
+      <tr class="gh"><td colspan="2">ACTIVOS</td></tr>
+      <tr class="gh"><td colspan="2" style="padding-left:20px;font-size:10px">ACTIVO CORRIENTE</td></tr>
+      <tr class="ind"><td>Banco Occidente – Cte (1110-01)</td><td>$99.214.400</td></tr>
+      <tr class="ind"><td>Bancolombia – Ahorros (1116-01)</td><td>$160.855.000</td></tr>
+      <tr class="ind"><td>Banco Bogotá – Ahorros (1116-02)</td><td>$197.716.000</td></tr>
+      <tr class="ind"><td>CDT – Inversión Temporal (1120)</td><td>$56.200.000</td></tr>
+      <tr class="ind"><td>Clientes – Ecopetrol (1305)</td><td>$1.091.407.658</td></tr>
+      <tr class="ind"><td>Anticipo Ret. Renta Ecopetrol (1355)</td><td>$24.554.285</td></tr>
+      <tr class="ind"><td>Anticipo Reteica Ecopetrol (1356)</td><td>$7.857.371</td></tr>
+      <tr class="ind"><td>Anticipo Ret. IVA Ecopetrol (1357)</td><td>$24.996.685</td></tr>
+      <tr class="ind"><td>Inventario Producto 1 – 40 uds (1430-01)</td><td>$20.000.000</td></tr>
+      <tr class="ind"><td>Inventario Producto 2 – 24 uds (1430-02)</td><td>$19.200.000</td></tr>
+      <tr class="ind"><td>Inventario Producto 3 – 100 uds (1430-03)</td><td>$110.000.000</td></tr>
+      <tr class="ind"><td>IVA Descontable neto (2408-D − 2408-G)</td><td>($27.495.571)</td></tr>
+      <tr class="sub"><td>TOTAL ACTIVO CORRIENTE</td><td>$1.784.505.828</td></tr>
+      <tr class="gh"><td colspan="2" style="padding-left:20px;font-size:10px">ACTIVO NO CORRIENTE – PROPIEDAD PLANTA Y EQUIPO</td></tr>
+      <tr class="ind"><td>Construcciones y Edificaciones (1516)</td><td>$202.000.000</td></tr>
+      <tr class="ind"><td>Muebles y Enseres (1504)</td><td>$25.000.000</td></tr>
+      <tr class="ind"><td>Equipo de Cómputo y Oficina (1524)</td><td>$16.900.000</td></tr>
+      <tr class="sub"><td>TOTAL ACTIVO NO CORRIENTE</td><td>$243.900.000</td></tr>
+      <tr class="tot"><td>TOTAL ACTIVOS</td><td>$2.028.405.828</td></tr>
+
+      <tr class="gh"><td colspan="2">PASIVOS</td></tr>
+      <tr class="gh"><td colspan="2" style="padding-left:20px;font-size:10px">PASIVO CORRIENTE</td></tr>
+      <tr class="ind"><td>Proveedores – Mercancías (2205)</td><td>$431.503.180</td></tr>
+      <tr class="ind"><td>Retención en la Fuente Practicada (2365)</td><td>$3.215.500</td></tr>
+      <tr class="ind"><td>Reteica Practicada (2368)</td><td>$831.200</td></tr>
+      <tr class="sub"><td>TOTAL PASIVOS</td><td>$435.549.880</td></tr>
+
+      <tr class="gh"><td colspan="2">PATRIMONIO</td></tr>
+      <tr class="ind"><td>Capital Autorizado – 1.000 acc × $2.000.000 (3105)</td><td>$2.000.000.000</td></tr>
+      <tr class="ind"><td>(−) Capital por Suscribir – 400 acc (0516)</td><td>($800.000.000)</td></tr>
+      <tr class="ind"><td>(−) Capital Suscrito × Cobrar – 240 acc (0515)</td><td>($240.000.000)</td></tr>
+      <tr class="ind"><td>Capital Pagado neto – 160 acc × $2M </td><td>$960.000.000</td></tr>
+      <tr class="ind"><td>(−) Gastos del Período</td><td>($13.800.000)</td></tr>
+      <tr class="ind"><td>(−) Costo de Ventas</td><td>($596.800.000)</td></tr>
+      <tr class="ind"><td>(+) Ventas del Período</td><td>$982.171.428</td></tr>
+      <tr class="sub"><td>Utilidad del Ejercicio</td><td>$371.571.428</td></tr>
+      <tr class="sub"><td>TOTAL PATRIMONIO</td><td>$1.331.571.428</td></tr>
+
+      <tr class="pos"><td>TOTAL PASIVO + PATRIMONIO</td><td>$1.767.121.308</td></tr>
+    </table>
+    <div class="bal-ok">✅ Activo = Pasivo + Patrimonio · La ecuación contable se cumple</div>
+  </div>
+</div>
+
+<!-- P&G -->
+<div id="pyr" class="section">
+  <h1>Estado de Resultados (P&amp;G)</h1>
+  <p class="subtitle">Compañía Uteista S.A.S. · Del 1 al 12 de mayo de 2026</p>
+  <div class="ef">
+    <div class="ef-hdr"><h2>ESTADO DE RESULTADOS</h2><p>Uteista S.A.S. · Cifras en pesos colombianos</p></div>
+    <table class="ef">
+      <tr class="gh"><td colspan="2">INGRESOS OPERACIONALES</td></tr>
+      <tr class="ind"><td>Ventas Producto 1 – 160 uds × $1.250.000</td><td>$200.000.000</td></tr>
+      <tr class="ind"><td>Ventas Producto 2 – 96 uds × $1.600.000</td><td>$153.600.000</td></tr>
+      <tr class="ind"><td>Ventas Producto 3 – 400 uds × $1.571.429</td><td>$628.571.428</td></tr>
+      <tr class="sub"><td>TOTAL VENTAS NETAS</td><td>$982.171.428</td></tr>
+
+      <tr class="gh"><td colspan="2">COSTO DE MERCANCÍA VENDIDA</td></tr>
+      <tr class="ind"><td>CMV Producto 1 – 160 × $500.000</td><td>$80.000.000</td></tr>
+      <tr class="ind"><td>CMV Producto 2 – 96 × $800.000</td><td>$76.800.000</td></tr>
+      <tr class="ind"><td>CMV Producto 3 – 400 × $1.100.000</td><td>$440.000.000</td></tr>
+      <tr class="sub"><td>TOTAL COSTO DE VENTAS</td><td>($596.800.000)</td></tr>
+
+      <tr class="pos"><td>UTILIDAD BRUTA</td><td>$385.371.428</td></tr>
+
+      <tr class="gh"><td colspan="2">GASTOS OPERACIONALES DE ADMINISTRACIÓN</td></tr>
+      <tr class="ind"><td>Registro Mercantil – Cámara de Comercio (5290)</td><td>$3.800.000</td></tr>
+      <tr class="ind"><td>Honorarios Contables – L. Díaz (5105)</td><td>$10.000.000</td></tr>
+      <tr class="sub"><td>TOTAL GASTOS OPERACIONALES</td><td>($13.800.000)</td></tr>
+
+      <tr class="pos"><td>UTILIDAD OPERACIONAL</td><td>$371.571.428</td></tr>
+
+      <tr class="gh"><td colspan="2">INGRESOS NO OPERACIONALES</td></tr>
+      <tr class="ind"><td>Rendimiento CDT (estimado $56.200.000 × 1% × 6 meses)</td><td>$3.372.000</td></tr>
+      <tr class="sub"><td>TOTAL INGRESOS NO OPERACIONALES</td><td>$3.372.000</td></tr>
+
+      <tr class="pos"><td>UTILIDAD ANTES DE IMPUESTOS</td><td>$374.943.428</td></tr>
+      <tr class="ind"><td>Impuesto de Renta estimado 35%</td><td>($131.230.200)</td></tr>
+      <tr class="tot"><td>UTILIDAD NETA DEL EJERCICIO</td><td>$243.713.228</td></tr>
+    </table>
+  </div>
+
+  <div class="ef" style="margin-top:16px">
+    <div class="ef-hdr"><h2>RESUMEN IVA Y RETENCIONES</h2></div>
+    <table class="ef">
+      <tr class="gh"><td colspan="2">IVA</td></tr>
+      <tr class="ind"><td>IVA Descontable (compras)</td><td>$139.149.000</td></tr>
+      <tr class="ind"><td>IVA Generado (ventas)</td><td>($166.644.571)</td></tr>
+      <tr class="sub"><td>IVA a pagar (generado supera descontable)</td><td>$27.495.571</td></tr>
+      <tr class="gh"><td colspan="2">RETENCIONES PRACTICADAS (pasivo)</td></tr>
+      <tr class="ind"><td>Retención en la Fuente 2365</td><td>$3.215.500</td></tr>
+      <tr class="ind"><td>Reteica 2368</td><td>$831.200</td></tr>
+      <tr class="sub"><td>Total retenciones a declarar y pagar</td><td>$4.046.700</td></tr>
+      <tr class="gh"><td colspan="2">ANTICIPOS DE RETENCIÓN (activo – Ecopetrol nos retiene)</td></tr>
+      <tr class="ind"><td>Anticipo Ret. Renta</td><td>$24.554.285</td></tr>
+      <tr class="ind"><td>Anticipo Reteica</td><td>$7.857.371</td></tr>
+      <tr class="ind"><td>Anticipo Ret. IVA</td><td>$24.996.685</td></tr>
+      <tr class="sub"><td>Total anticipos</td><td>$57.408.341</td></tr>
+    </table>
+  </div>
+</div>
+
+<script>
+function show(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-tabs button').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const idx=['intro','asientos','cuentas-t','balance','pyr'].indexOf(id);
+  document.querySelectorAll('.nav-tabs button')[idx].classList.add('active');
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
